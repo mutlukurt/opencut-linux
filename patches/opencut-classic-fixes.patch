@@ -106,10 +106,40 @@ index aeec2fd..d37ebb1 100644
  	[key in ShortcutKey]?: TActionWithOptionalArgs;
  };
 diff --git a/apps/web/src/core/managers/audio-manager.ts b/apps/web/src/core/managers/audio-manager.ts
-index d0716aa..78d899f 100644
+index d0716aa..e3f6aa2 100644
 --- a/apps/web/src/core/managers/audio-manager.ts
 +++ b/apps/web/src/core/managers/audio-manager.ts
-@@ -113,13 +113,42 @@ export class AudioManager {
+@@ -40,6 +40,12 @@ export class AudioManager {
+ 	private queuedSources = new Set<AudioBufferSourceNode>();
+ 	private preparedClipBuffers = new Map<string, Promise<AudioBuffer | null>>();
+ 	private decodedBuffers = new Map<string, Promise<AudioBuffer | null>>();
++	// GainNodes for clips currently playing, keyed by element id. Used to apply
++	// live volume changes without restarting playback.
++	private activeClipGains = new Map<string, GainNode>();
++	// Structural fingerprint of the timeline so param-only changes (e.g. volume)
++	// can be detected and applied live instead of triggering a full restart.
++	private lastStructuralSignature = "";
+ 	private playbackSessionId = 0;
+ 	private lastIsPlaying = false;
+ 	private lastVolume = 1;
+@@ -109,17 +115,59 @@ export class AudioManager {
+ 	};
+ 
+ 	private handleTimelineChange = (): void => {
++		const tracks = this.editor.scenes.getActiveSceneOrNull()?.tracks ?? null;
++		const signature = computeStructuralSignature(tracks);
++		const isStructuralChange = signature !== this.lastStructuralSignature;
++		this.lastStructuralSignature = signature;
++
++		// Param-only changes (e.g. volume/mute tweaks) are applied live to the
++		// active clip gain nodes (see setLiveClipVolume) and must NOT trigger a
++		// full restart — restarting on every drag tick causes choppy/cutting
++		// audio and the new volume only takes effect after a seek+replay.
++		if (!isStructuralChange) {
++			return;
++		}
++
+ 		this.disposeSinks();
  		this.preparedClipBuffers.clear();
  		this.decodedBuffers.clear();
  
@@ -156,7 +186,66 @@ index d0716aa..78d899f 100644
  	private ensureAudioContext(): AudioContext | null {
  		if (this.audioContext) return this.audioContext;
  		if (typeof window === "undefined") return null;
-@@ -459,14 +488,18 @@ export class AudioManager {
+@@ -155,6 +203,7 @@ export class AudioManager {
+ 		this.playbackLatencyCompensationSeconds = 0;
+ 
+ 		const tracks = this.editor.scenes.getActiveScene().tracks;
++		this.lastStructuralSignature = computeStructuralSignature(tracks);
+ 		const mediaAssets = this.editor.media.getAssets();
+ 		const duration = this.editor.timeline.getTotalDuration();
+ 
+@@ -229,6 +278,7 @@ export class AudioManager {
+ 			source.disconnect();
+ 		}
+ 		this.queuedSources.clear();
++		this.activeClipGains.clear();
+ 	}
+ 
+ 	private async runClipIterator({
+@@ -409,13 +459,42 @@ export class AudioManager {
+ 		});
+ 
+ 		this.queuedSources.add(node);
++		this.activeClipGains.set(clip.timelineElement.id, clipGain);
+ 		node.addEventListener("ended", () => {
+ 			node.disconnect();
+ 			clipGain.disconnect();
+ 			this.queuedSources.delete(node);
++			this.activeClipGains.delete(clip.timelineElement.id);
+ 		});
+ 	}
+ 
++	/**
++	 * Apply a volume change live to a currently-playing clip without restarting
++	 * playback. Called from the clip volume line while dragging so the new level
++	 * is heard instantly. `linearGain` is in linear amplitude (0 = silent).
++	 */
++	setLiveClipVolume({
++		elementId,
++		linearGain,
++	}: {
++		elementId: string;
++		linearGain: number;
++	}): void {
++		const gain = this.activeClipGains.get(elementId);
++		if (!gain || !this.audioContext) return;
++		const clamped = Math.max(0, linearGain);
++		try {
++			// Smooth (~15ms) ramp to avoid zipper/click artifacts.
++			gain.gain.setTargetAtTime(
++				clamped,
++				this.audioContext.currentTime,
++				0.015,
++			);
++		} catch {
++			gain.gain.value = clamped;
++		}
++	}
++
+ 	private waitUntilCaughtUp({
+ 		timelineTime,
+ 		targetAhead,
+@@ -459,14 +538,18 @@ export class AudioManager {
  	}: {
  		clip: AudioClipSource;
  	}): boolean {
@@ -183,6 +272,74 @@ index d0716aa..78d899f 100644
  	}
  
  	private hasCurveRetime({ clip }: { clip: AudioClipSource }): boolean {
+@@ -698,3 +781,36 @@ export class AudioManager {
+ 		}
+ 	}
+ }
++
++/**
++ * Structural fingerprint of the timeline — clip identity, type, placement and
++ * source — deliberately excluding params (e.g. volume). Two states with the
++ * same signature differ only by param values, so volume/mute tweaks can be
++ * applied live without a full playback restart.
++ */
++function computeStructuralSignature(
++	tracks: import("@/timeline").SceneTracks | null | undefined,
++): string {
++	if (!tracks) return "";
++	const parts: string[] = [];
++	const all = [...tracks.overlay, tracks.main, ...tracks.audio];
++	for (const track of all) {
++		for (const el of track.elements) {
++			const mediaId = "mediaId" in el ? el.mediaId : "";
++			const sourceType = "sourceType" in el ? el.sourceType : "";
++			parts.push(
++				[
++					el.id,
++					el.type,
++					el.startTime,
++					el.duration,
++					el.trimStart,
++					el.trimEnd,
++					mediaId,
++					sourceType,
++				].join("|"),
++			);
++		}
++	}
++	return parts.join(";");
++}
+diff --git a/apps/web/src/timeline/components/audio-volume-line.tsx b/apps/web/src/timeline/components/audio-volume-line.tsx
+index 659bc5d..0fb643c 100644
+--- a/apps/web/src/timeline/components/audio-volume-line.tsx
++++ b/apps/web/src/timeline/components/audio-volume-line.tsx
+@@ -8,7 +8,11 @@ import {
+ 	getLinePosFromDb,
+ } from "@/timeline/audio-display";
+ import { VOLUME_DB_MAX, VOLUME_DB_MIN } from "@/timeline/audio-constants";
+-import { getElementVolume, hasAnimatedVolume } from "@/timeline/audio-state";
++import {
++	dBToLinear,
++	getElementVolume,
++	hasAnimatedVolume,
++} from "@/timeline/audio-state";
+ import type { AudioElement } from "@/timeline/types";
+ import {
+ 	clamp,
+@@ -97,6 +101,13 @@ export function AudioVolumeLine({
+ 					},
+ 				],
+ 			});
++			// Apply the new volume to the currently-playing clip's gain node
++			// immediately, so the change is heard while dragging — no restart
++			// (and therefore no gap) needed.
++			editor.audio?.setLiveClipVolume?.({
++				elementId: element.id,
++				linearGain: dBToLinear(nextVolume),
++			});
+ 			lastPreviewVolumeRef.current = nextVolume;
+ 			hasChangedRef.current = !isNearlyEqual({
+ 				leftValue: startVolumeRef.current,
 diff --git a/apps/web/src/timeline/components/timeline-element.tsx b/apps/web/src/timeline/components/timeline-element.tsx
 index 1b549a1..39cff04 100644
 --- a/apps/web/src/timeline/components/timeline-element.tsx
