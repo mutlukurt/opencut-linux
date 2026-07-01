@@ -105,27 +105,16 @@ index aeec2fd..d37ebb1 100644
  export type KeybindingConfig = {
  	[key in ShortcutKey]?: TActionWithOptionalArgs;
  };
-diff --git a/apps/web/src/timeline/components/theme.ts b/apps/web/src/timeline/components/theme.ts
-index 9f93dc1..d151429 100644
---- a/apps/web/src/timeline/components/theme.ts
-+++ b/apps/web/src/timeline/components/theme.ts
-@@ -1,6 +1,9 @@
- import type { TrackType } from "@/timeline";
- 
--export const TIMELINE_AUDIO_WAVEFORM_COLOR = "rgba(255, 255, 255, 0.7)";
-+// Audio clips use a green waveform on a dark-green clip background, matching the
-+// look of common video editors (e.g. CapCut). Bright green reads clearly on the
-+// dark clip and keeps quiet passages visible.
-+export const TIMELINE_AUDIO_WAVEFORM_COLOR = "rgba(74, 222, 128, 0.95)";
- 
- export const TIMELINE_TRACK_THEME: Record<
- 	TrackType,
-@@ -12,7 +15,7 @@ export const TIMELINE_TRACK_THEME: Record<
- 	video: { elementClassName: "transparent" },
- 	text: { elementClassName: "bg-[#5DBAA0]" },
- 	audio: {
--		elementClassName: "bg-[#8F5DBA]",
-+		elementClassName: "bg-[#14342A]",
- 		waveformColor: TIMELINE_AUDIO_WAVEFORM_COLOR,
- 	},
- 	graphic: { elementClassName: "bg-[#BA5D7A]" },
+diff --git a/apps/web/src/timeline/components/timeline-element.tsx b/apps/web/src/timeline/components/timeline-element.tsx
+index 1b549a1..39cff04 100644
+--- a/apps/web/src/timeline/components/timeline-element.tsx
++++ b/apps/web/src/timeline/components/timeline-element.tsx
+@@ -584,7 +584,7 @@ function ElementInner({
+ 					>
+ 						<div
+ 							className={cn(
+-								"flex shrink-0 items-center overflow-hidden",
++								"flex w-full shrink-0 items-center overflow-hidden",
+ 								getTimelineElementClassName({
+ 									type: getTrackTypeForElementType({
+ 										elementType: element.type,
