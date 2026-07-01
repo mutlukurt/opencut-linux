@@ -106,10 +106,57 @@ index aeec2fd..d37ebb1 100644
  	[key in ShortcutKey]?: TActionWithOptionalArgs;
  };
 diff --git a/apps/web/src/core/managers/audio-manager.ts b/apps/web/src/core/managers/audio-manager.ts
-index d0716aa..a1ed8ca 100644
+index d0716aa..78d899f 100644
 --- a/apps/web/src/core/managers/audio-manager.ts
 +++ b/apps/web/src/core/managers/audio-manager.ts
-@@ -459,14 +459,18 @@ export class AudioManager {
+@@ -113,13 +113,42 @@ export class AudioManager {
+ 		this.preparedClipBuffers.clear();
+ 		this.decodedBuffers.clear();
+ 
+-		if (!this.editor.playback.getIsPlaying()) return;
++		if (this.editor.playback.getIsPlaying()) {
++			void this.startPlayback({
++				time: this.editor.playback.getCurrentTime() / TICKS_PER_SECOND,
++			});
++			return;
++		}
+ 
+-		void this.startPlayback({
+-			time: this.editor.playback.getCurrentTime() / TICKS_PER_SECOND,
+-		});
++		// Not playing: pre-warm (background-decode) every clip's buffer so that
++		// when the user later presses play, audio starts immediately from the
++		// clip's start with no decode delay / skipped head / intermittent gaps.
++		void this.preWarmClips();
+ 	};
+ 
++	private async preWarmClips(): Promise<void> {
++		try {
++			const scene = this.editor.scenes.getActiveScene();
++			if (!scene) return;
++			const mediaAssets = this.editor.media.getAssets();
++			const clips = await collectAudioClips({
++				tracks: scene.tracks,
++				mediaAssets,
++			});
++			// Decode (and render) each non-muted clip in the background. Results are
++			// cached in preparedClipBuffers; errors are swallowed per-clip.
++			await Promise.all(
++				clips.map((clip) =>
++					clip.muted
++						? Promise.resolve()
++						: this.getPreparedClipBuffer({ clip }).catch(() => null),
++				),
++			);
++		} catch {
++			// Pre-warming is best-effort; failures don't affect playback.
++		}
++	}
++
+ 	private ensureAudioContext(): AudioContext | null {
+ 		if (this.audioContext) return this.audioContext;
+ 		if (typeof window === "undefined") return null;
+@@ -459,14 +488,18 @@ export class AudioManager {
  	}: {
  		clip: AudioClipSource;
  	}): boolean {
