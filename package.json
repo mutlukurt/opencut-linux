@@ -1,0 +1,76 @@
+{
+  "name": "opencut-linux",
+  "productName": "OpenCut",
+  "version": "0.2.0",
+  "description": "Unofficial community Linux desktop build (.deb) of OpenCut, the free and open source video editor.",
+  "author": {
+    "name": "Mutlu Kurt",
+    "url": "https://github.com/mutlukurt"
+  },
+  "homepage": "https://github.com/mutlukurt/opencut-linux",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mutlukurt/opencut-linux.git"
+  },
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "build": "bash scripts/build-deb.sh",
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "app.opencut.desktop",
+    "productName": "OpenCut",
+    "asar": true,
+    "files": [
+      "main.js",
+      "build/icon.png"
+    ],
+    "extraResources": [
+      { "from": "runtime", "to": "runtime" },
+      { "from": "licenses", "to": "licenses" },
+      { "from": "NOTICE", "to": "NOTICE" },
+      { "from": "LICENSE", "to": "LICENSE" }
+    ],
+    "directories": {
+      "output": "out",
+      "buildResources": "build"
+    },
+    "linux": {
+      "target": [
+        "deb"
+      ],
+      "category": "AudioVideo;Video;AudioVideoEditing;",
+      "icon": "build/icon.png",
+      "maintainer": "Mutlu Kurt <https://github.com/mutlukurt>",
+      "description": "Unofficial community Linux desktop build of OpenCut, the free and open source video editor. Based on OpenCut (MIT). Not affiliated with the OpenCut project.",
+      "synopsis": "Free and open source video editor (unofficial OpenCut Linux build)",
+      "desktop": {
+        "Name": "OpenCut",
+        "Comment": "Free and open source video editor",
+        "Categories": "AudioVideo;Video;AudioVideoEditing;",
+        "Keywords": "video;editor;opencut;cut;movie;"
+      }
+    },
+    "deb": {
+      "afterInstall": "build/after-install.sh",
+      "afterRemove": "build/after-remove.sh",
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libdrm2",
+        "libgbm1",
+        "libxcb-dri3-0"
+      ]
+    }
+  }
+}

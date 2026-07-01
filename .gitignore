@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# electron-builder output
+out/
+dist/
+
+# Assembled Next.js standalone runtime (produced by scripts/build-deb.sh)
+runtime/
+
+# Upstream source checkout (fetched by scripts/build-deb.sh)
+opencut-classic/
+.opencut-src/
+
+# Build artifacts
+*.deb
+*.log
+
+# OS / editor
+.DS_Store
+*.swp

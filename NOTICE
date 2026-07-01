@@ -1,0 +1,44 @@
+OpenCut for Linux (opencut-linux)
+=================================
+
+This is an UNOFFICIAL, community-maintained Linux desktop package (.deb) of
+OpenCut. It is not produced, endorsed by, or affiliated with the OpenCut
+project or its authors.
+
+--------------------------------------------------------------------------------
+Upstream software
+--------------------------------------------------------------------------------
+
+This package bundles and redistributes OpenCut (the archived "classic"
+codebase), a free and open source video editor.
+
+    OpenCut
+    Copyright (c) 2025-2026 OpenCut
+    License: MIT (see licenses/OpenCut-LICENSE)
+    Upstream: https://github.com/opencut-app/opencut-classic
+    Active rewrite: https://github.com/opencut-app/opencut
+
+The full, unmodified OpenCut MIT license text is preserved in:
+    licenses/OpenCut-LICENSE
+
+Small source patches applied to make an offline desktop build are documented in
+patches/opencut-classic-fixes.patch and are described in the README. They do not
+change the license of the upstream code.
+
+--------------------------------------------------------------------------------
+Packaging work
+--------------------------------------------------------------------------------
+
+The Linux desktop packaging (Electron wrapper in main.js, electron-builder
+configuration, build scripts and install scriptlets) is:
+
+    Copyright (c) 2026 Mutlu Kurt (@mutlukurt)
+    License: MIT (see LICENSE)
+    Repository: https://github.com/mutlukurt/opencut-linux
+
+--------------------------------------------------------------------------------
+Trademarks
+--------------------------------------------------------------------------------
+
+"OpenCut" and related names/logos are the property of their respective owners.
+Their use here is solely to identify the upstream software being packaged.
