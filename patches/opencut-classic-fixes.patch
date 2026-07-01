@@ -1,11 +1,22 @@
 diff --git a/apps/web/next.config.ts b/apps/web/next.config.ts
-index 71d96c2..36716d6 100644
+index 71d96c2..017be87 100644
 --- a/apps/web/next.config.ts
 +++ b/apps/web/next.config.ts
-@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
+@@ -1,4 +1,5 @@
+ import type { NextConfig } from "next";
++import path from "node:path";
+ import { withBotId } from "botid/next/config";
+ import { withContentCollections } from "@content-collections/next";
+ 
+@@ -9,6 +10,17 @@ const nextConfig: NextConfig = {
  	reactStrictMode: true,
  	productionBrowserSourceMaps: true,
  	output: "standalone",
++	// Pin the standalone file-tracing root to this repo (apps/web is two levels
++	// down). Without this, a node_modules/package.json in an outer packaging
++	// directory can be mis-detected as the workspace root, which changes the
++	// standalone output layout and breaks the desktop build assembly.
++	outputFileTracingRoot: path.join(__dirname, "../../"),
 +	// Desktop packaging: the upstream snapshot ships with a number of type-only
 +	// mismatches that do not affect the emitted runtime JavaScript. Skip the
 +	// blocking type/lint gate so we can produce a runnable standalone build.
@@ -94,3 +105,27 @@ index aeec2fd..d37ebb1 100644
  export type KeybindingConfig = {
  	[key in ShortcutKey]?: TActionWithOptionalArgs;
  };
+diff --git a/apps/web/src/timeline/components/theme.ts b/apps/web/src/timeline/components/theme.ts
+index 9f93dc1..d151429 100644
+--- a/apps/web/src/timeline/components/theme.ts
++++ b/apps/web/src/timeline/components/theme.ts
+@@ -1,6 +1,9 @@
+ import type { TrackType } from "@/timeline";
+ 
+-export const TIMELINE_AUDIO_WAVEFORM_COLOR = "rgba(255, 255, 255, 0.7)";
++// Audio clips use a green waveform on a dark-green clip background, matching the
++// look of common video editors (e.g. CapCut). Bright green reads clearly on the
++// dark clip and keeps quiet passages visible.
++export const TIMELINE_AUDIO_WAVEFORM_COLOR = "rgba(74, 222, 128, 0.95)";
+ 
+ export const TIMELINE_TRACK_THEME: Record<
+ 	TrackType,
+@@ -12,7 +15,7 @@ export const TIMELINE_TRACK_THEME: Record<
+ 	video: { elementClassName: "transparent" },
+ 	text: { elementClassName: "bg-[#5DBAA0]" },
+ 	audio: {
+-		elementClassName: "bg-[#8F5DBA]",
++		elementClassName: "bg-[#14342A]",
+ 		waveformColor: TIMELINE_AUDIO_WAVEFORM_COLOR,
+ 	},
+ 	graphic: { elementClassName: "bg-[#BA5D7A]" },

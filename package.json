@@ -1,7 +1,7 @@
 {
   "name": "opencut-linux",
   "productName": "OpenCut",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Unofficial community Linux desktop build (.deb) of OpenCut, the free and open source video editor.",
   "author": {
     "name": "Mutlu Kurt",
