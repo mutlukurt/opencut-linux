@@ -1,6 +1,8 @@
 # OpenCut for Linux (`.deb`)
 
-**Unofficial community Linux desktop build of [OpenCut](https://github.com/opencut-app/opencut-classic)** — a free and open source video editor.
+**Unofficial community Linux desktop build of [OpenCut](https://github.com/OpenCut-app/OpenCut)** — a free and open source video editor (the open-source CapCut alternative).
+
+> Packaged from the archived [`opencut-classic`](https://github.com/OpenCut-app/opencut-classic) codebase — the version that currently works as a full editor. The main OpenCut project lives at **<https://github.com/OpenCut-app/OpenCut>**.
 
 This project wraps the OpenCut web editor in a self-contained [Electron](https://www.electronjs.org/) desktop application and ships it as an installable Debian/Ubuntu `.deb` package. It runs **fully offline and local-first**: your videos and projects never leave your device.
 
@@ -96,8 +98,8 @@ NOTICE                               Attribution and third-party notices
 ## Credits & license
 
 - **OpenCut** (the editor) — © 2025-2026 OpenCut, MIT.
-  Upstream: <https://github.com/opencut-app/opencut-classic> ·
-  Active rewrite: <https://github.com/opencut-app/opencut>
+  Project: <https://github.com/OpenCut-app/OpenCut> ·
+  Packaged source (archived): <https://github.com/OpenCut-app/opencut-classic>
 - **Linux packaging** (this repository) — © 2026 [Mutlu Kurt (@mutlukurt)](https://github.com/mutlukurt), MIT.
 
 Both the upstream software and this packaging are distributed under the MIT

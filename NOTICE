@@ -9,14 +9,15 @@ project or its authors.
 Upstream software
 --------------------------------------------------------------------------------
 
-This package bundles and redistributes OpenCut (the archived "classic"
-codebase), a free and open source video editor.
+This package bundles and redistributes OpenCut, a free and open source video
+editor. It is built from the archived "classic" codebase (the version that
+currently works as a full editor).
 
     OpenCut
     Copyright (c) 2025-2026 OpenCut
     License: MIT (see licenses/OpenCut-LICENSE)
-    Upstream: https://github.com/opencut-app/opencut-classic
-    Active rewrite: https://github.com/opencut-app/opencut
+    Project (main):   https://github.com/OpenCut-app/OpenCut
+    Packaged source:  https://github.com/OpenCut-app/opencut-classic (archived)
 
 The full, unmodified OpenCut MIT license text is preserved in:
     licenses/OpenCut-LICENSE
