@@ -7,16 +7,18 @@
 set -e
 
 APP_DIR="/opt/OpenCut"
-DESKTOP_FILE="/usr/share/applications/opencut-desktop.desktop"
+BIN_NAME="opencut-linux"
+BIN_PATH="${APP_DIR}/${BIN_NAME}"
+DESKTOP_FILE="/usr/share/applications/${BIN_NAME}.desktop"
 
 # --- Binary symlink (default electron-builder logic) ------------------------
 if type update-alternatives 2>/dev/null >&1; then
-    if [ -L '/usr/bin/opencut-desktop' ] && [ -e '/usr/bin/opencut-desktop' ] && [ "$(readlink '/usr/bin/opencut-desktop')" != '/etc/alternatives/opencut-desktop' ]; then
-        rm -f '/usr/bin/opencut-desktop'
+    if [ -L "/usr/bin/${BIN_NAME}" ] && [ -e "/usr/bin/${BIN_NAME}" ] && [ "$(readlink "/usr/bin/${BIN_NAME}")" != "/etc/alternatives/${BIN_NAME}" ]; then
+        rm -f "/usr/bin/${BIN_NAME}"
     fi
-    update-alternatives --install '/usr/bin/opencut-desktop' 'opencut-desktop' "${APP_DIR}/opencut-desktop" 100 || ln -sf "${APP_DIR}/opencut-desktop" '/usr/bin/opencut-desktop'
+    update-alternatives --install "/usr/bin/${BIN_NAME}" "${BIN_NAME}" "${BIN_PATH}" 100 || ln -sf "${BIN_PATH}" "/usr/bin/${BIN_NAME}"
 else
-    ln -sf "${APP_DIR}/opencut-desktop" '/usr/bin/opencut-desktop'
+    ln -sf "${BIN_PATH}" "/usr/bin/${BIN_NAME}"
 fi
 
 # --- Sandbox fix ------------------------------------------------------------
@@ -32,7 +34,7 @@ fi
 # sandbox), ensure the desktop launcher starts the app with --no-sandbox. This
 # is safe here: the app only ever loads its own bundled content from localhost.
 if [ -f "${DESKTOP_FILE}" ] && ! grep -q -- '--no-sandbox' "${DESKTOP_FILE}"; then
-    sed -i 's|^Exec=\(.*\)/opencut-desktop\(.*\)$|Exec=\1/opencut-desktop --no-sandbox\2|' "${DESKTOP_FILE}" || true
+    sed -i "s|^Exec=\(.*\)/${BIN_NAME}\(.*\)$|Exec=\1/${BIN_NAME} --no-sandbox\2|" "${DESKTOP_FILE}" || true
 fi
 
 # --- System database refresh (default electron-builder logic) ---------------

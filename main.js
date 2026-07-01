@@ -28,6 +28,21 @@ app.commandLine.appendSwitch("disable-dev-shm-usage");
 // window.
 app.commandLine.appendSwitch("ozone-platform-hint", "auto");
 
+// GPU presentation reliability.
+//
+// On many Linux setups (especially Wayland with Mesa drivers) Chromium renders
+// the page correctly but fails to *present* the composited frame to the window,
+// leaving a fully black window even though the UI is loaded. Disabling hardware
+// acceleration switches Electron to software compositing, which is presented via
+// a plain shared-memory buffer — a much more reliable path that fixes the black
+// window on affected systems. Users with a known-good GPU can opt back into
+// hardware acceleration by launching with OPENCUT_ENABLE_GPU=1.
+if (process.env.OPENCUT_ENABLE_GPU === "1") {
+  app.commandLine.appendSwitch("ignore-gpu-blocklist");
+} else {
+  app.disableHardwareAcceleration();
+}
+
 // ---------------------------------------------------------------------------
 // Logging (persisted so users can share it if something goes wrong)
 // ---------------------------------------------------------------------------
