@@ -23,23 +23,24 @@ app.commandLine.appendSwitch("disable-setuid-sandbox");
 // Some environments expose a tiny /dev/shm; fall back to /tmp so the renderer
 // cannot crash on shared-memory allocation.
 app.commandLine.appendSwitch("disable-dev-shm-usage");
-// Prefer the native platform (Wayland when available, otherwise X11). Ubuntu
-// 26.04 defaults to Wayland; without this hint some setups fail to present a
-// window.
+// Prefer the native platform (Wayland when available, otherwise X11).
 app.commandLine.appendSwitch("ozone-platform-hint", "auto");
 
-// GPU presentation reliability.
+// Rendering strategy.
 //
-// On many Linux setups (especially Wayland with Mesa drivers) Chromium renders
-// the page correctly but fails to *present* the composited frame to the window,
-// leaving a fully black window even though the UI is loaded. Disabling hardware
-// acceleration switches Electron to software compositing, which is presented via
-// a plain shared-memory buffer — a much more reliable path that fixes the black
-// window on affected systems. Users with a known-good GPU can opt back into
-// hardware acceleration by launching with OPENCUT_ENABLE_GPU=1.
-if (process.env.OPENCUT_ENABLE_GPU === "1") {
-  app.commandLine.appendSwitch("ignore-gpu-blocklist");
-} else {
+// Default: software compositing (app.disableHardwareAcceleration). On many
+// Wayland + Mesa setups Chromium renders correctly but fails to *present* the
+// GPU-composited frame, leaving a black window; software compositing is
+// presented via a plain shared-memory buffer and is reliably visible.
+//
+// Audio smoothness does NOT depend on this: audio clips are fully pre-decoded
+// and played back as single Web Audio buffer sources, so playback runs on the
+// audio thread independently of main-thread/compositor load (see the audio
+// manager change in patches/opencut-classic-fixes.patch).
+//
+// Users with a known-good GPU who want hardware-accelerated video preview can
+// opt in with OPENCUT_GPU=1.
+if (process.env.OPENCUT_GPU !== "1") {
   app.disableHardwareAcceleration();
 }
 

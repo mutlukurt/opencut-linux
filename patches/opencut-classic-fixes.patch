@@ -105,6 +105,37 @@ index aeec2fd..d37ebb1 100644
  export type KeybindingConfig = {
  	[key in ShortcutKey]?: TActionWithOptionalArgs;
  };
+diff --git a/apps/web/src/core/managers/audio-manager.ts b/apps/web/src/core/managers/audio-manager.ts
+index d0716aa..a1ed8ca 100644
+--- a/apps/web/src/core/managers/audio-manager.ts
++++ b/apps/web/src/core/managers/audio-manager.ts
+@@ -459,14 +459,18 @@ export class AudioManager {
+ 	}: {
+ 		clip: AudioClipSource;
+ 	}): boolean {
+-		return (
+-			this.hasCurveRetime({ clip }) ||
+-			hasAnimatedVolume({ element: clip.timelineElement }) ||
+-			shouldMaintainPitch({
+-				rate: clip.retime?.rate ?? 1,
+-				maintainPitch: clip.retime?.maintainPitch,
+-			})
+-		);
++		// Always pre-decode the whole clip into a single AudioBuffer and play it
++		// through one AudioBufferSourceNode, instead of streaming/decoding chunks
++		// on the fly during playback.
++		//
++		// Streaming decode (the previous default for plain clips) runs on the main
++		// thread via a setInterval scheduler; when the main thread is busy (e.g.
++		// software compositing, or a heavy timeline), buffers arrive late and the
++		// scheduler drops/resyncs them, producing audible stutter. A single
++		// pre-decoded buffer source runs entirely on the Web Audio thread and is
++		// immune to main-thread jank, so playback stays smooth.
++		//
++		return true;
+ 	}
+ 
+ 	private hasCurveRetime({ clip }: { clip: AudioClipSource }): boolean {
 diff --git a/apps/web/src/timeline/components/timeline-element.tsx b/apps/web/src/timeline/components/timeline-element.tsx
 index 1b549a1..39cff04 100644
 --- a/apps/web/src/timeline/components/timeline-element.tsx
